@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="A formal Mealy Machine model of a single Enigma rotor: complete study guide, state transitions, theory analysis, and implementation details.">
+  <title>A Mealy Machine Model of the Enigma Rotor | Models of Computation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Accessible Skip to Content Link -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Sticky Top Navigation Bar -->
+  <header class="top-nav" id="top-nav">
+    <div class="container top-nav-inner">
+      <a href="#section-0" class="top-nav-brand">
+        <span>MOC</span> Enigma Rotor Mealy Machine
+      </a>
+      <nav class="top-nav-links" aria-label="Study Guide Sections Navigation">
+        <a href="#section-0">Overview</a>
+        <a href="#section-1">1. Summary</a>
+        <a href="#section-2">2. End-to-End</a>
+        <a href="#section-3">3. Formal Def</a>
+        <a href="#section-4">4. Diagram</a>
+        <a href="#section-5">5. Matrix</a>
+        <a href="#section-6">6. States</a>
+        <a href="#section-7">7. Properties</a>
+        <a href="#section-8">8. Simulator & Traces</a>
+        <a href="#section-9">9. Theory</a>
+        <a href="#section-10">10. Code</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="container">
+
+    <!-- ====================================================================
+         SECTION 0: HEADER
+         ==================================================================== -->
+    <section id="section-0" aria-labelledby="section-0-title">
+      <div class="header-eyebrow">MODELS OF COMPUTATION | TEAM PROJECT</div>
+      <h1 id="section-0-title">A Mealy Machine Model of the Enigma Rotor</h1>
+      <p class="header-subtitle">Complete study guide: every state, every transition, the interactive diagram, implementation details.</p>
+
+      <!-- Stat Tiles (Data-Driven via app.js) -->
+      <div class="stat-tiles-grid" aria-label="Machine Key Statistics">
+        <div class="stat-tile">
+          <span class="stat-tile-value" id="stat-states">26</span>
+          <span class="stat-tile-label">STATES (<span class="state-lc">q0</span> to <span class="state-lc">q25</span>)</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-value" id="stat-inputs">26</span>
+          <span class="stat-tile-label">Input Symbols (A–Z)</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-value" id="stat-outputs">26</span>
+          <span class="stat-tile-label">Output Symbols (A–Z)</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-value" id="stat-transitions">676</span>
+          <span class="stat-tile-label">Transitions</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-value" id="stat-start">q0</span>
+          <span class="stat-tile-label">Start State</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-tile-value" id="stat-accepting">0</span>
+          <span class="stat-tile-label">Accepting States</span>
+        </div>
+      </div>
+
+      <div class="callout-box callout-highlight">
+        <div class="callout-box-title">What this document is</div>
+        <p>Every number, transition and trace shown across this guide comes directly from the machine data file (<code>enigmaData.js</code>) and its pure execution simulator, ensuring this study guide cannot drift from the underlying mathematical machine.</p>
+      </div>
+
+      <h2 style="font-size: 1.15rem; margin-top: 1.5rem; margin-bottom: 0.75rem;">Study Guide Contents</h2>
+      <div class="contents-grid" role="navigation" aria-label="Document Sections">
+        <a href="#section-1" class="contents-link"><span class="contents-badge">§1</span> The One-Minute Explanation</a>
+        <a href="#section-2" class="contents-link"><span class="contents-badge">§2</span> How the System Works End to End</a>
+        <a href="#section-3" class="contents-link"><span class="contents-badge">§3</span> Formal Definition</a>
+        <a href="#section-4" class="contents-link"><span class="contents-badge">§4</span> Complete Mealy Machine Diagram</a>
+        <a href="#section-5" class="contents-link"><span class="contents-badge">§5</span> Transition Table and Matrix</a>
+        <a href="#section-6" class="contents-link"><span class="contents-badge">§6</span> State-by-State Details</a>
+        <a href="#section-7" class="contents-link"><span class="contents-badge">§7</span> What the Machine Computes</a>
+        <a href="#section-8" class="contents-link"><span class="contents-badge">§8</span> Simulator and Worked Traces</a>
+        <a href="#section-9" class="contents-link"><span class="contents-badge">§9</span> Theory Points a Teacher May Probe</a>
+        <a href="#section-10" class="contents-link"><span class="contents-badge">§10</span> Implementation Details</a>
+      </div>
+
+      <div class="meta-info-bar">
+        <p><strong>Team:</strong> <span>Harsha Narayan J, Lingeshwar Rethinam, Sanjay, Pavan Aadarsh</span></p>
+        <p><strong>Course:</strong> <span>Models of Computation (Research Paper Review)</span></p>
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 1: THE ONE-MINUTE EXPLANATION
+         ==================================================================== -->
+    <section id="section-1" aria-labelledby="section-1-title">
+      <h2 id="section-1-title">Section 1: The One-Minute Explanation</h2>
+
+      <div class="callout-box callout-highlight">
+        <div class="callout-box-title">Say this first</div>
+        <p>We model one Enigma rotor as a Mealy machine where each of the 26 states represents a physical rotational rotor position. Every key press outputs a scrambled letter and immediately advances the rotor to the next position. Crucially, the output character depends on both the current state and the specific key pressed.</p>
+      </div>
+
+      <h3>Four things the machine demonstrates</h3>
+      <div class="table-container">
+        <table class="section-1-table">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 25%;">Demonstration</th>
+              <th scope="col" style="width: 33%;">One-Sentence Meaning</th>
+              <th scope="col" style="width: 27%;">Live Data Trace</th>
+              <th scope="col" style="width: 15%;">Simulator Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Same key, different output</strong></td>
+              <td>Pressing the exact same key repeatedly yields varying cipher outputs because the rotor advances each time.</td>
+              <td><code id="demo-same-key">Input: "AAA" from q0 → Output: "JKC"</code></td>
+              <td><button type="button" class="diagram-btn btn-open-demo-sim" data-input="AAA" data-start="q0">▶ Open in simulator</button></td>
+            </tr>
+            <tr>
+              <td><strong>2. Rotor stepping</strong></td>
+              <td>Every keystroke deterministically advances the machine state from position <code>qN</code> to <code>q(N+1)</code>.</td>
+              <td><code id="demo-stepping">Input: "A" from q0 → Next State: q1</code></td>
+              <td><button type="button" class="diagram-btn btn-open-demo-sim" data-input="A" data-start="q0">▶ Open in simulator</button></td>
+            </tr>
+            <tr>
+              <td><strong>3. Full turn</strong></td>
+              <td>After exactly 26 keystrokes, the rotor completes a full 360-degree cycle and returns back to state <code>q0</code>.</td>
+              <td><code id="demo-full-turn">26 keystrokes from q0 return to q0</code></td>
+              <td><button type="button" class="diagram-btn btn-open-demo-sim" data-input="26xA" data-start="q0">▶ Open in simulator</button></td>
+            </tr>
+            <tr>
+              <td><strong>4. Wrap-around</strong></td>
+              <td>Stepping is strictly modular: advancing from the final rotational position <code>q25</code> wraps back around to <code>q0</code>.</td>
+              <td><code id="demo-wrap">Input: "AA" from q25 → Output: "EJ"</code></td>
+              <td><button type="button" class="diagram-btn btn-open-demo-sim" data-input="AA" data-start="q25">▶ Open in simulator</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout-box callout-warning">
+        <div class="callout-box-title">Be upfront about this</div>
+        <p>This model implements the internal scrambling permutation and mechanical stepping of a single rotor only. It has no reflector and no plugboard, so it is not a full Enigma and does not by itself encrypt in a reversible reciprocal way. Historical cryptanalysis methods (the Turing-Welchman Bombe, clonking, Banburismus) are analyzed in our research paper review, but are not modeled by this finite state machine.</p>
+      </div>
+
+      <h3>Why a Mealy machine and not a lookup table or if-statements?</h3>
+      <p>A static program or simple lookup table cannot capture the computational properties of an Enigma rotor:</p>
+      <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: var(--text-secondary);">
+        <li><strong>State-dependent output:</strong> The emitted cipher letter is a function of both current rotor position (state) AND input character (<span class="math-var">λ: Q × Σ → Γ</span>).</li>
+        <li><strong>State memory:</strong> The machine maintains historical context across key presses; a flat lookup table has no internal memory.</li>
+        <li><strong>Strict determinism:</strong> For any given state and input letter, exactly one transition path and one output character exist.</li>
+        <li><strong>Linear time execution:</strong> Processing <span class="math-var">n</span> keystrokes takes O(n) time via constant-time O(1) table lookups per keystroke.</li>
+        <li><strong>Explainable trace:</strong> The formal state trajectory demonstrates precisely how each ciphertext character was physically generated.</li>
+        <li><strong>Formal rigor:</strong> As a standard theoretical automaton, it can be mathematically analyzed, proved complete, and tested for state equivalence and minimality.</li>
+      </ul>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 2: HOW THE SYSTEM WORKS END TO END
+         ==================================================================== -->
+    <section id="section-2" aria-labelledby="section-2-title">
+      <h2 id="section-2-title">Section 2: How the System Works End to End</h2>
+
+      <p>The system operates as a finite state transducer with a clear sequential pipeline:</p>
+
+      <!-- Pipeline Diagram -->
+      <div class="pipeline-container" aria-label="End to End Pipeline">
+        <div class="pipeline-node">
+          <div class="pipeline-node-title">Plain Text</div>
+          <div class="pipeline-node-desc">Raw keystrokes from operator</div>
+        </div>
+        <div class="pipeline-arrow" aria-hidden="true">→</div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-title">Clean Input</div>
+          <div class="pipeline-node-desc">Validated uppercase letters (A–Z)</div>
+        </div>
+        <div class="pipeline-arrow" aria-hidden="true">→</div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-title">Machine Run</div>
+          <div class="pipeline-node-desc">One transition move per character</div>
+        </div>
+        <div class="pipeline-arrow" aria-hidden="true">→</div>
+        <div class="pipeline-node">
+          <div class="pipeline-node-title">Output & Trace</div>
+          <div class="pipeline-node-desc">Ciphertext and visited state path</div>
+        </div>
+      </div>
+
+      <h3>Worked Example: Input "ABC" from Start State q0</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Step</th>
+              <th scope="col">Current State</th>
+              <th scope="col">Letter Read</th>
+              <th scope="col">Output Letter</th>
+              <th scope="col">Next State</th>
+            </tr>
+          </thead>
+          <tbody id="worked-example-table-body">
+            <!-- Populated dynamically via app.js -->
+            <tr>
+              <td>1</td>
+              <td><code>q0</code></td>
+              <td><code>A</code></td>
+              <td><strong><code>J</code></strong></td>
+              <td><code>q1</code></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><code>q1</code></td>
+              <td><code>B</code></td>
+              <td><strong><code>D</code></strong></td>
+              <td><code>q2</code></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><code>q2</code></td>
+              <td><code>C</code></td>
+              <td><strong><code>D</code></strong></td>
+              <td><code>q3</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="worked-example-result"><strong>Result:</strong> Input "ABC" from q0 produces output "JDD", ending in state q3.</p>
+
+      <h3>Where this sits in the paper's method</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" style="width: 28%;">Stage in Paper</th>
+              <th scope="col" style="width: 52%;">What the Research Paper Does</th>
+              <th scope="col" style="width: 20%;">Covered by our Machine?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Stage 1: Finding the plugboard</strong></td>
+              <td>Constructs cribs, menus, Turing Bombe hardware, and checking machine circuits to deduce plugboard stecker pairings.</td>
+              <td><span style="color: var(--text-muted); font-weight: 600;">No (our model has no plugboard and no bombe search)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Stage 2: Army and Air Force</strong></td>
+              <td>Searches turnover point and clonking over 26 × 26 = 676 ring-setting combinations.</td>
+              <td><span style="color: var(--text-muted); font-weight: 600;">No (our model has no notches or ring settings)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Stage 2: Navy</strong></td>
+              <td>Uses Banburismus and the German Navy EINS catalog over 26<sup>3</sup> = 17,576 window positions to identify rotor positions.</td>
+              <td><span style="color: var(--text-muted); font-weight: 600;">No (our model uses rotational states q0 to q25 with no window letters or catalog searches)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Rotor stepping as a state machine</strong></td>
+              <td>Formal deterministic state transition model capturing internal pin wiring permutations and rotational stepping per keystroke.</td>
+              <td><strong style="color: var(--accent);">Yes (what we built)</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout-box">
+        <div class="callout-box-title">Honest scope</div>
+        <p>Our machine is a formal theoretical model of one rotor's stepping and scrambling mechanisms, not an implementation of the Bombe or cryptanalytic attacks. If asked in an examination whether this project breaks Enigma, the correct and precise answer is that <strong>it models the foundational physical machine that the cryptanalysts attacked</strong>.</p>
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 3: FORMAL DEFINITION
+         ==================================================================== -->
+    <section id="section-3" aria-labelledby="section-3-title">
+      <h2 id="section-3-title">Section 3: Formal Definition</h2>
+
+      <p>In formal language theory, a <strong>Mealy machine</strong> is a 6-tuple:</p>
+      <p style="text-align: center; font-size: 1.15rem; margin: 1rem 0; font-family: var(--font-mono); font-weight: 700; color: var(--accent);">
+        M = (Q, Σ, Γ, δ, λ, q0)
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" style="width: 15%;">Tuple Element</th>
+              <th scope="col" style="width: 25%;">Formal Name</th>
+              <th scope="col" style="width: 60%;">Definition in our Enigma Rotor Model</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Q</code></td>
+              <td>Finite set of states</td>
+              <td>26 states <code>{q0, q1, ..., q25}</code>, corresponding to the 26 rotational positions of the rotor.</td>
+            </tr>
+            <tr>
+              <td><code>Σ</code></td>
+              <td>Input alphabet</td>
+              <td>26 uppercase Latin alphabet symbols <code>{A, B, ..., Z}</code> representing keys pressed on the keyboard.</td>
+            </tr>
+            <tr>
+              <td><code>Γ</code></td>
+              <td>Output alphabet</td>
+              <td>26 uppercase Latin alphabet symbols <code>{A, B, ..., Z}</code> representing illuminated lampboard letters.</td>
+            </tr>
+            <tr>
+              <td><code>δ</code></td>
+              <td>Transition function</td>
+              <td>Total function <code>Q × Σ → Q</code> (676 entries). Advances the rotor cyclically: <span class="math-var">δ(q<sub>N</sub>, σ) = q<sub>(N+1) mod 26</sub></span></td>
+            </tr>
+            <tr>
+              <td><code>λ</code></td>
+              <td>Output function</td>
+              <td>Total function <code>Q × Σ → Γ</code> (676 entries). In each state <span class="math-var">q<sub>N</sub></span>, <span class="math-var">λ(q<sub>N</sub>, ·)</span> is a strict permutation of A–Z.</td>
+            </tr>
+            <tr>
+              <td><code>q0</code></td>
+              <td>Start state</td>
+              <td>State <code>q0</code> (the initial reference position of the rotor).</td>
+            </tr>
+            <tr>
+              <td><code>F</code></td>
+              <td>Accepting states</td>
+              <td><strong>None</strong> (empty set ∅). A Mealy machine is a finite-state transducer that reads a finite input string and emits one output letter per input letter, with no accepting states. A short run, including an empty one, is valid.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Alphabet Chips (Interactive Letter View)</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted);">The input and output alphabets Σ and Γ share the 26 standard uppercase characters. <strong>Click any letter chip</strong> to toggle Letter View on the Mealy machine diagram below:</p>
+      <div class="alphabet-chips" id="alphabet-chips-container" aria-label="Alphabet Characters">
+        <!-- Rendered by app.js -->
+      </div>
+
+      <div class="callout-box callout-highlight">
+        <div class="callout-box-title">From one rotor to the full machine</div>
+        <p>Three unconstrained 26-contact rotors yield 26 × 26 × 26 = 17,576 theoretical window positions. However, due to the middle rotor's mechanical ratchet double-stepping anomaly, only 26 × 25 × 26 = 16,900 states are physically reachable during continuous encryption (as documented in the paper review's addendum). Our project models a single rotor in isolation, which has exactly 26 rotational states (q0 to q25), with no window letters, no notch positions, and no ring settings.</p>
+      </div>
+
+      <h3>Mealy Machine vs. Deterministic Finite Automaton (DFA)</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Dimension</th>
+              <th scope="col">Mealy Machine (Our Rotor)</th>
+              <th scope="col">Standard DFA (Acceptor)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Primary Purpose</strong></td>
+              <td>Transducer: converts an input string into an output string.</td>
+              <td>Classifier: decides membership in a formal language (<span class="math-var">w ∈ L</span>).</td>
+            </tr>
+            <tr>
+              <td><strong>Output Mechanism</strong></td>
+              <td>Emits an output symbol on every state transition (<span class="math-var">λ: Q × Σ → Γ</span>).</td>
+              <td>No transition outputs; emits only an Accept/Reject verdict upon string termination.</td>
+            </tr>
+            <tr>
+              <td><strong>Accepting States</strong></td>
+              <td>No accepting states (<span class="math-var">F = ∅</span>); every valid input character is processed.</td>
+              <td>Designated set of final accepting states <span class="math-var">F ⊆ Q</span>.</td>
+            </tr>
+            <tr>
+              <td><strong>State Incompleteness</strong></td>
+              <td>Must be total (all 676 transitions defined) to encrypt all inputs.</td>
+              <td>Can be partial, often implicitly routing undefined transitions to a dead state.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 4: COMPLETE MEALY MACHINE DIAGRAM
+         ==================================================================== -->
+    <section id="section-4" aria-labelledby="section-4-title">
+      <h2 id="section-4-title">Section 4: Complete Mealy Machine Diagram</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">
+        Complete transition diagram of the single-rotor transducer. Exactly 26 states (<code id="diagram-states-label">q0–q25</code>) arranged cyclically, with 26 composite ring edges representing all 676 input-level substitutions.
+      </p>
+
+      <div class="diagram-wrapper">
+        <!-- Diagram Control Bar -->
+        <div class="diagram-toolbar" role="toolbar" aria-label="Diagram Controls">
+          <div class="diagram-controls-group">
+            <button type="button" id="btn-zoom-in" class="diagram-btn" aria-label="Zoom in diagram">
+              <span aria-hidden="true">+</span> Zoom In
+            </button>
+            <button type="button" id="btn-zoom-out" class="diagram-btn" aria-label="Zoom out diagram">
+              <span aria-hidden="true">−</span> Zoom Out
+            </button>
+            <button type="button" id="btn-zoom-reset" class="diagram-btn" aria-label="Reset diagram view">
+              <span aria-hidden="true">↺</span> Reset View
+            </button>
+          </div>
+
+          <div class="letter-view-status" id="letter-view-indicator">
+            <span>Letter View: <strong>Normal (All Inputs)</strong></span>
+            <button type="button" id="btn-clear-letter-view" class="diagram-btn" style="display: none; padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+              ✕ Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- SVG Viewport with Drag Pan & Zoom -->
+        <div class="diagram-viewport-container" id="diagram-viewport" tabindex="0" role="region" aria-label="Interactive Enigma Rotor Mealy Machine Diagram">
+          <svg id="enigma-diagram-svg" class="diagram-svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <!-- Arrowhead Marker for Ring Transitions -->
+              <marker id="edge-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#64748b" id="marker-path" />
+              </marker>
+              <marker id="edge-arrow-highlight" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#1d4ed8" />
+              </marker>
+              <marker id="start-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#1d4ed8" />
+              </marker>
+            </defs>
+
+            <!-- Transform Group for Pan & Zoom -->
+            <g id="diagram-pan-zoom-group">
+              <!-- Start State Arrow pointing into q0 -->
+              <g id="diagram-start-indicator">
+                <path d="M 500 70 L 500 142" class="start-indicator-path" marker-end="url(#start-arrow)" />
+                <text x="500" y="60" class="start-indicator-label">start</text>
+              </g>
+
+              <!-- Ring Edges Container (exactly 26 edges, no chords) -->
+              <g id="diagram-edges-group"></g>
+
+              <!-- Nodes Container (exactly 26 nodes: q0 to q25) -->
+              <g id="diagram-nodes-group"></g>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Status Line under Diagram -->
+        <div class="diagram-status-line" id="diagram-status-line" aria-live="polite">
+          <!-- Populated from enigmaData -->
+        </div>
+
+        <!-- Compact Letter View Summary Line (shown when letter view active) -->
+        <p id="letter-view-summary-line" style="display: none; font-size: 0.84rem; color: var(--text-muted); font-family: var(--font-mono); margin: 0;"></p>
+
+        <!-- Diagram Legend Box (directly under diagram in print and screen) -->
+        <div class="diagram-legend-box" aria-label="Diagram Legend">
+          <h4 class="diagram-legend-title">Diagram Symbols & Notation Legend</h4>
+          <div class="diagram-legend-grid">
+            <div class="legend-item">
+              <span class="legend-swatch swatch-start" aria-hidden="true"></span>
+              <div>
+                <strong>Start State (q0):</strong> Initial rotor position. Thicker solid outline with light tinted fill and an incoming "start" pointer arrow. <em>(No double-ring is used, confirming this transducer has no accepting states.)</em>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch swatch-normal" aria-hidden="true"></span>
+              <div>
+                <strong>Normal States (q1–q24):</strong> Intermediate rotational positions. Single solid outline with white fill.
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-swatch swatch-wrap" aria-hidden="true"></span>
+              <div>
+                <strong>Wrap-Around State (q25):</strong> Terminal rotor position. Dashed outline; its transition cycles back to <code>q0</code>.
+              </div>
+            </div>
+            <div class="legend-item">
+              <div>
+                <strong><code>any_key</code>:</strong> Any keyboard character (A–Z) causing mechanical rotation to state <code>q(n+1)</code>.
+              </div>
+            </div>
+            <div class="legend-item">
+              <div>
+                <strong><code>S_n(input)</code>:</strong> Scrambler output character determined by internal pin wiring at position <code>qn</code>.
+              </div>
+            </div>
+            <div class="legend-item">
+              <div>
+                <strong>Transducer Model:</strong> <em>No accepting states</em> (no double-circle states). A finite-state transducer that reads a finite input string and emits one output letter per input letter, with no accepting states. A short run, including an empty one, is valid.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scrambling Table Box (directly under legend) -->
+        <div class="scrambling-table-card" id="scrambling-table-card" aria-label="Current State Scrambling Table">
+          <div class="scrambling-table-header">
+            <h3 class="scrambling-table-title" id="scrambler-title">Scrambling table (state q0)</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Wiring permutation at current rotor position</span>
+          </div>
+          <div class="scrambling-table-container">
+            <table class="scrambler-table" id="scrambler-table" aria-describedby="scrambler-title">
+              <thead>
+                <tr class="row-input">
+                  <th scope="row" class="row-header">INPUT</th>
+                  <!-- Populated dynamically via app.js -->
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-output">
+                  <th scope="row" class="row-header">OUTPUT</th>
+                  <!-- Populated dynamically via app.js -->
+                </tr>
+                <tr class="row-next">
+                  <th scope="row" class="row-header">NEXT</th>
+                  <!-- Populated dynamically via app.js -->
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Floating Tooltip -->
+      <div id="diagram-tooltip" class="diagram-tooltip" role="tooltip" aria-hidden="true"></div>
+
+      <!-- Floating Context Menu -->
+      <div id="diagram-context-menu" class="diagram-context-menu" role="menu" aria-label="State node actions">
+        <button type="button" class="context-menu-item" id="ctx-show-details" role="menuitem">Show state details</button>
+        <button type="button" class="context-menu-item" id="ctx-highlight-edge" role="menuitem">Highlight outgoing edge</button>
+        <div class="context-menu-divider" role="separator"></div>
+        <button type="button" class="context-menu-item" id="ctx-set-start" role="menuitem">Set as simulator start state</button>
+      </div>
+
+      <!-- Toast Notification -->
+      <div id="diagram-toast" class="diagram-toast" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 5: TRANSITION TABLE AND MATRIX
+         ==================================================================== -->
+    <section id="section-5" aria-labelledby="section-5-title">
+      <h2 id="section-5-title">Section 5: Transition Table and Matrix</h2>
+
+      <!-- 5a. Transition Matrix -->
+      <h3>5a. Transition Matrix (26 States × 26 Letters)</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 0.75rem;">
+        Because every key press deterministically advances the rotor by one rotational position, the next state is identical across all 26 inputs for any given row and is displayed in the dedicated "Next state" column. Each cell shows the output character produced by that state for the corresponding input key.
+      </p>
+
+      <div style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <span><strong>Legend:</strong></span>
+        <span><span class="fp-symbol" style="font-size: 0.9rem;">★</span> <strong>Fixed-point cell:</strong> The internal rotor scrambling maps this input letter directly to itself (output equals input).</span>
+        <span>• Hover to inspect row/column • Click to pin • Tab and arrow keys to navigate.</span>
+      </div>
+
+      <div class="matrix-scroll-wrapper" id="matrix-scroll-container" role="region" aria-label="26 by 26 Transition Matrix">
+        <table class="transition-matrix-table" id="transition-matrix-table" role="grid" aria-label="Enigma Rotor State Transition Matrix">
+          <thead>
+            <tr id="matrix-header-row">
+              <th scope="col" class="matrix-corner-header">State</th>
+              <!-- A to Z + Next State columns dynamically generated -->
+            </tr>
+          </thead>
+          <tbody id="matrix-body">
+            <!-- 26 state rows generated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <p style="font-size: 0.86rem; color: var(--text-muted); margin-top: 0.75rem;">
+        <strong>Completeness Property:</strong> All 26 states × 26 input letters = 676 transitions are completely and deterministically defined. There are no implicit rejects, dead states, or missing transitions, proving that this is a total, complete Mealy machine.
+      </p>
+
+      <hr style="border: none; border-top: 1px solid var(--border-light); margin: 2rem 0;">
+
+      <!-- 5b. All 676 Transitions in Plain English -->
+      <h3>5b. All 676 Transitions in Plain English</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+        Exhaustive catalog of every single transition defined by the machine data, described in plain conversational English.
+      </p>
+
+      <div class="trans-controls-bar">
+        <div class="trans-controls-left">
+          <input type="text" id="trans-filter-search" class="trans-search-input" placeholder="Filter by state, letter, output or reading..." aria-label="Filter transitions">
+          
+          <select id="trans-filter-state" class="trans-select" aria-label="Filter transitions by state">
+            <option value="">All States (q0–q25)</option>
+            <!-- States q0 to q25 options populated dynamically -->
+          </select>
+
+          <label class="trans-checkbox-label" for="trans-filter-fixed">
+            <input type="checkbox" id="trans-filter-fixed"> Only fixed points (output equals input)
+          </label>
+
+          <button type="button" id="trans-filter-clear" class="diagram-btn">Clear Filters</button>
+        </div>
+
+        <span class="trans-count-badge" id="trans-count-label">Showing 676 of 676 transitions</span>
+      </div>
+
+      <div class="trans-table-container">
+        <p class="print-catalog-notice">Note: This printed view shows the currently displayed transition rows. The complete 676-row catalog is available with filters on the live site.</p>
+        <table class="transitions-english-table" id="transitions-english-table" aria-label="Catalog of all 676 transitions in plain English">
+          <thead>
+            <tr>
+              <th scope="col" data-sort="index" class="sortable" style="width: 7%;"># <span class="sort-icon">▲</span></th>
+              <th scope="col" data-sort="from" class="sortable" style="width: 10%;">From <span class="sort-icon"></span></th>
+              <th scope="col" data-sort="read" class="sortable" style="width: 9%;">Read <span class="sort-icon"></span></th>
+              <th scope="col" data-sort="output" class="sortable" style="width: 10%;">Output <span class="sort-icon"></span></th>
+              <th scope="col" data-sort="to" class="sortable" style="width: 9%;">To <span class="sort-icon"></span></th>
+              <th scope="col" data-sort="reading" class="sortable" style="width: 55%;">Plain-English Reading <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="transitions-english-tbody">
+            <!-- Paginated rows rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="trans-pagination-bar">
+        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+          <span>Page size:</span>
+          <select id="trans-page-size" class="trans-select" style="padding: 0.25rem 0.5rem;">
+            <option value="26">26 rows per page</option>
+            <option value="52">52 rows per page</option>
+            <option value="all">All (676 rows)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="button" id="trans-btn-prev" class="diagram-btn">Previous</button>
+          <span id="trans-page-info" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); font-family: var(--font-mono);">Page 1 of 26</span>
+          <button type="button" id="trans-btn-next" class="diagram-btn">Next</button>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 6: STATE-BY-STATE DETAILS
+         ==================================================================== -->
+    <section id="section-6" aria-labelledby="section-6-title">
+      <h2 id="section-6-title">Section 6: State-by-State Details</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Each card answers what the state means, how we get here, where we go, and what happens on other input.
+      </p>
+
+      <div class="cards-toolbar">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="text" id="cards-search" class="trans-search-input" placeholder="Filter cards by state, e.g. q5..." aria-label="Filter state profile cards">
+          <button type="button" id="cards-search-clear" class="diagram-btn" style="padding: 0.35rem 0.6rem;">Clear</button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <button type="button" id="btn-cards-expand" class="diagram-btn">Expand all</button>
+          <button type="button" id="btn-cards-collapse" class="diagram-btn">Collapse all</button>
+        </div>
+      </div>
+
+      <!-- Shared Note across 26 states printed once above the cards -->
+      <div class="section-6-print-shared-note" aria-hidden="true">
+        <strong>Handling Other Inputs (Shared Rule across all 26 States):</strong> The machine's alphabet is strictly A to Z, so other characters are not inputs to it. They are intercepted by the input check before the machine moves. For every valid key A to Z there is a deterministic move, so there are no reject or dead states.
+      </div>
+
+      <!-- Category 1: Start State -->
+      <h3 class="cards-category-heading">Start state (q0)</h3>
+      <div class="cards-group-container" id="cards-container-start">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Category 2: Mid-Ring States -->
+      <h3 class="cards-category-heading">Mid-ring states (q1 to q24)</h3>
+      <div class="cards-group-container" id="cards-container-mid">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Category 3: Wrap-Around State -->
+      <h3 class="cards-category-heading">Wrap-around state (q25)</h3>
+      <div class="cards-group-container" id="cards-container-wrap">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 7: WHAT THE MACHINE COMPUTES
+         ==================================================================== -->
+    <section id="section-7" aria-labelledby="section-7-title">
+      <h2 id="section-7-title">Section 7: What the Machine Computes</h2>
+
+      <p>Because this machine is a transducer rather than a language acceptor, we do not describe a "language accepted" (which would be trivial: <span class="math-var">Σ*</span>). Instead, we formally characterize the mathematical function <span class="math-var">f: Σ* → Γ*</span> that it computes: a finite-state transducer that reads a finite input string and emits one output letter per input letter, with no accepting states. A short run, including an empty one, is valid.</p>
+
+      <h3>Eight Core Computational Properties</h3>
+      <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.6rem;">
+        <li><strong>Complete:</strong> All 676 possible <code>(state, letter)</code> pairs are defined; no valid uppercase input is ever rejected or blocked.</li>
+        <li><strong>Deterministic:</strong> For every state and input character, there is exactly one next state and one output symbol.</li>
+        <li><strong>Per-state bijection:</strong> In every state, the mapping across all 26 input letters produces a permutation of <code>A–Z</code> with no duplicates and none omitted.</li>
+        <li><strong>Not self-inverse:</strong> Unlike a complete historical Enigma machine, this isolated rotor lacks a reflector; running the ciphertext through the machine a second time does not recover plaintext.</li>
+        <li><strong>Fixed points:</strong> In every state, exactly one letter is mapped to itself due to the internal pin wiring offset.</li>
+        <li><strong>Position matters:</strong> Polyalphabetic substitution ensures that repeated input letters map to different outputs as the rotor advances (e.g. <code>AAA</code> from <code>q0</code> becomes <code>JKC</code>).</li>
+        <li><strong>Period 26:</strong> Stepping advances modulo 26, meaning the state sequence repeats cyclically every 26 keystrokes (q0 → q1 → … → q25 → q0).</li>
+        <li><strong>All 26 states are distinguishable:</strong> No two states share identical output substitution rows; thus the machine is minimal and cannot be reduced to fewer states.</li>
+      </ol>
+
+      <h3>Fixed Points by State (Letters Mapped to Themselves)</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted);">Dynamically computed from machine transitions where <span class="math-var">λ(q<sub>N</sub>, σ) = σ</span>:</p>
+      <div class="fixed-points-grid" id="fixed-points-container" aria-label="Fixed points per state">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+
+      <div class="callout-box">
+        <div class="callout-box-title">A strength and a weakness, say both</div>
+        <p><strong>Strength:</strong> Mathematical precision and absolute explainability—the transducer provides a deterministic, zero-ambiguity trace for every letter typed.</p>
+        <p><strong>Weakness:</strong> Because this is only a single isolated rotor without a reflector or plugboard, it provides negligible cryptographic security and cannot decrypt reciprocally by re-running ciphertext. The model in this project contains no window letters, no notch positions, and no ring settings; the natural theoretical extension studied in cryptanalysis is cascading three rotors with turnover notches, a reflector, and a permutation plugboard.</p>
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 8: SIMULATOR AND WORKED TRACES
+         ==================================================================== -->
+    <section id="section-8" aria-labelledby="section-8-title">
+      <h2 id="section-8-title">Section 8: Simulator and Worked Traces</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+        An interactive step-by-step transducer simulator with an automated text cleaner, bi-directional diagram and matrix synchronization, and an exhaustive live verification suite of 16 worked test traces.
+      </p>
+
+      <!-- 8a: Simulator -->
+      <div id="sim-section-8a" style="margin-bottom: 3rem;">
+        <h3 id="sim-8a-title" style="margin-bottom: 0.75rem;">8a. Single Rotor Mealy Machine Simulator</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.92rem;">
+          Feed messages into the single rotor. Watch the rotor step deterministically, emit output letters, and cycle through its 26 internal states.
+        </p>
+
+        <div class="simulator-wrapper">
+          <!-- Input Panel -->
+          <div class="sim-panel" id="sim-input-panel">
+            <div class="sim-panel-header">
+              <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Simulation Input & Configuration</span>
+              <a href="#section-4" id="link-watch-diagram" style="font-size: 0.82rem; font-weight: 600; color: var(--accent);">
+                ↗ Watch this in the diagram
+              </a>
+            </div>
+
+            <div class="sim-input-row">
+              <div style="flex: 1; min-width: 240px;">
+                <label for="sim-input-text" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.35rem;">
+                  Input Message:
+                </label>
+                <input type="text" id="sim-input-text" class="sim-text-input" value="" placeholder="e.g. HELLOWORLD" autocomplete="off" spellcheck="false" />
+              </div>
+
+              <div style="min-width: 140px;">
+                <label for="sim-start-state" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.35rem;">
+                  Start State (q0–q25):
+                </label>
+                <select id="sim-start-state" class="sim-state-select" style="width: 100%; padding: 0.5rem; font-family: var(--font-mono); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #ffffff;">
+                  <!-- Dynamically populated q0 to q25 -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Cleaner Checkbox & Feedback -->
+            <div style="margin-top: 0.75rem;">
+              <label style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); cursor: pointer;">
+                <input type="checkbox" id="sim-clean-checkbox" checked />
+                Clean my text first (uppercase, remove spaces, digits and punctuation)
+              </label>
+
+              <!-- Live Feedback row when clean checkbox is on -->
+              <div id="sim-clean-feedback" class="sim-clean-feedback" aria-live="polite">
+                <span><strong>Cleaned input:</strong> <code id="clean-input-val">(empty)</code></span>
+                <span style="color: var(--text-muted);">|</span>
+                <span id="clean-removed-val"><strong>Removed:</strong> 0 characters</span>
+              </div>
+            </div>
+
+            <!-- Error message container (red-outlined, icon-marked, not colour-only) -->
+            <div id="sim-error-box" class="sim-error-box" style="display: none;" role="alert" aria-live="assertive">
+              <span class="sim-error-icon" aria-hidden="true">⛔</span>
+              <div id="sim-error-text"></div>
+            </div>
+
+            <!-- Quick-fill buttons -->
+            <div class="sim-quickfill-group">
+              <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-right: 0.35rem;">Quick-fill:</span>
+              <button type="button" class="ctrl-btn btn-quickfill" data-fill="A">A</button>
+              <button type="button" class="ctrl-btn btn-quickfill" data-fill="AAA">AAA</button>
+              <button type="button" class="ctrl-btn btn-quickfill" data-fill="ABC">ABC</button>
+              <button type="button" class="ctrl-btn btn-quickfill" data-fill="HELLOWORLD">HELLOWORLD</button>
+              <button type="button" class="ctrl-btn btn-quickfill" data-fill="ATTACKATDAWN">ATTACKATDAWN</button>
+              <button type="button" class="ctrl-btn btn-quickfill" data-fill="26xA">26 x A</button>
+            </div>
+          </div>
+
+          <!-- Controls Bar -->
+          <div class="sim-controls-bar">
+            <div class="sim-controls-left">
+              <button type="button" id="sim-btn-run-all" class="ctrl-btn sim-primary-btn" title="Run all characters through rotor (Enter in text box)">
+                ▶▶ Run All
+              </button>
+              <button type="button" id="sim-btn-step-back" class="ctrl-btn" title="Step back one character (Left arrow)">
+                ◀ Step Back
+              </button>
+              <button type="button" id="sim-btn-step-forward" class="ctrl-btn" title="Step forward one character (Right arrow)">
+                Step Forward ▶
+              </button>
+              <button type="button" id="sim-btn-autoplay" class="ctrl-btn" title="Auto-play simulation steps">
+                ⏯ Play
+              </button>
+              <button type="button" id="sim-btn-reset" class="ctrl-btn" title="Reset simulation to initial state">
+                ↺ Reset
+              </button>
+            </div>
+
+            <div class="sim-controls-right">
+              <label for="sim-speed-slider" style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);">
+                Speed:
+              </label>
+              <select id="sim-speed-slider" style="font-size: 0.78rem; padding: 0.25rem 0.45rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: #ffffff;">
+                <option value="900">Slow</option>
+                <option value="450" selected>Medium</option>
+                <option value="180">Fast</option>
+              </select>
+              <span id="sim-status-badge" class="sim-state-badge" aria-live="polite">Step 0 / 3</span>
+            </div>
+          </div>
+
+          <!-- Step Table Card -->
+          <div class="sim-step-table-card" tabindex="0" id="sim-step-table-wrapper" aria-label="Simulation step-by-step execution table. Use Left and Right arrow keys to step back and forward.">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Execution Step Trace:</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">(Focus table to navigate with ◄ / ► arrows)</span>
+            </div>
+            <div class="sim-step-table-container">
+              <table class="sim-step-table">
+                <thead>
+                  <tr>
+                    <th>Step</th>
+                    <th>Current State</th>
+                    <th>Key Read</th>
+                    <th>Output Produced</th>
+                    <th>Next State</th>
+                  </tr>
+                </thead>
+                <tbody id="sim-step-tbody">
+                  <!-- Filled dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Output Panel with Dual Tape -->
+          <div class="sim-panel" id="sim-output-panel">
+            <div class="sim-panel-header">
+              <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Simulation Tape & Output</span>
+              <span id="sim-final-state-badge" style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 800; color: var(--accent);">
+                Final State: q0
+              </span>
+            </div>
+
+            <!-- Tape visualizer -->
+            <div class="sim-tape-wrapper" aria-label="Aligned Input and Output Letter Tape">
+              <div class="sim-tape-track">
+                <span class="tape-track-label">IN:</span>
+                <div class="tape-track-cells" id="tape-input-cells">
+                  <!-- Input cells -->
+                </div>
+              </div>
+              <div class="sim-tape-track">
+                <span class="tape-track-label">OUT:</span>
+                <div class="tape-track-cells" id="tape-output-cells">
+                  <!-- Output cells -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Output string & Copy buttons -->
+            <div class="sim-output-summary">
+              <div>
+                <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Full Output String: </span>
+                <code id="sim-full-output-text" style="font-size: 1.05rem; font-weight: 800; color: var(--accent); letter-spacing: 0.08em;">-</code>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <button type="button" id="btn-copy-output" class="ctrl-btn" title="Copy output string to clipboard">
+                  📋 Copy output
+                </button>
+                <button type="button" id="btn-copy-trace" class="ctrl-btn" title="Copy full trace path to clipboard">
+                  📋 Copy trace
+                </button>
+                <span id="copy-confirm-msg" style="font-size: 0.8rem; font-weight: 700; color: var(--accent); opacity: 0; transition: opacity 0.2s ease;" aria-live="polite">
+                  Copied!
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen reader live announcement region -->
+          <div id="sim-sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+          <!-- Explanation box under simulator -->
+          <div class="callout-box" style="margin-top: 1rem;">
+            <div class="callout-box-title">Two kinds of outcome</div>
+            <p><strong>Valid runs:</strong> A valid run always ends in some state with an output string, because the machine is complete—every state has a deterministic transition for all 26 uppercase letters A through Z.</p>
+            <p><strong>Input errors:</strong> The machine's alphabet is strictly A to Z, so other characters are not inputs to it. An input error only happens when text outside A to Z is fed in, and it is caught by the input check before any machine move is made for that character. There are no reject or dead states inside the Mealy machine.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8b: Worked Traces -->
+      <div id="sim-section-8b">
+        <h3 id="traces-8b-title" style="margin-bottom: 0.75rem;">8b. Worked Test Traces & Verification Suite</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 0.75rem;">
+          The table below executes 16 canonical test cases (13 valid runs and 3 input errors) directly against the <code>runEnigmaMachine</code> simulator engine. Traces 1 to 16 mirror the project's automated test suite, evaluated live on page load.
+        </p>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary);">Live Suite Status:</span>
+            <span id="traces-match-counter" class="badge badge-accent" style="font-size: 0.85rem; padding: 0.25rem 0.65rem;">
+              Evaluating...
+            </span>
+          </div>
+          <button type="button" id="btn-run-all-traces" class="ctrl-btn sim-primary-btn" title="Re-evaluate all 16 test cases against the live simulation engine">
+            ✓ Run All Traces
+          </button>
+        </div>
+
+        <div class="table-container" style="max-height: 520px; overflow-y: auto;">
+          <table class="worked-traces-table" id="worked-traces-table" aria-label="16 Worked Test Cases and Verification Results">
+            <thead>
+              <tr>
+                <th style="width: 38px;">#</th>
+                <th><span class="hdr-screen">Start State</span><span class="hdr-print">Start</span></th>
+                <th>Input</th>
+                <th><span class="hdr-screen">Expected Output</span><span class="hdr-print">Expected out</span></th>
+                <th><span class="hdr-screen">Expected Final</span><span class="hdr-print">Expected final</span></th>
+                <th>Result</th>
+                <th><span class="hdr-screen">Execution Path</span><span class="hdr-print">Path</span></th>
+                <th>Note</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="worked-traces-tbody">
+              <!-- Dynamically rendered and compared live -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Box titled "Two kinds of outcome" under the table -->
+        <div class="callout-box" style="margin-top: 1.25rem;">
+          <div class="callout-box-title">Two kinds of outcome</div>
+          <p>
+            <strong>Valid inputs:</strong> Always produce an output string and a final state. Because <span class="math-var">δ</span> is total on <span class="math-var">Σ = {A, …, Z}</span>, every valid character advances the rotor position.
+          </p>
+          <p>
+            <strong>Invalid characters:</strong> The machine's alphabet is strictly A to Z, so other characters are not inputs to it. They are intercepted by the input check before the machine moves, so there are no reject or dead states in <span class="math-var">Q</span>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 9: THEORY POINTS A TEACHER MAY PROBE
+         ==================================================================== -->
+    <section id="section-9" aria-labelledby="section-9-title">
+      <h2 id="section-9-title">Section 9: Theory Points a Teacher May Probe</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1.25rem;">Key theoretical distinctions and viva questions on finite automata and computability theory:</p>
+
+      <div class="theory-accordion">
+        <details>
+          <summary>1. Is it really a Mealy machine?</summary>
+          <div class="theory-answer">
+            Yes, it strictly satisfies the mathematical definition of a Mealy machine. It possesses a finite set of 26 states <span class="math-var">Q</span>, finite input and output alphabets <span class="math-var">Σ = Γ = {A, …, Z}</span>, a total state transition function <span class="math-var">δ: Q × Σ → Q</span>, an output function <span class="math-var">λ: Q × Σ → Γ</span> whose values depend directly on both current state and input symbol, and a designated start state q0.
+          </div>
+        </details>
+
+        <details>
+          <summary>2. Complete vs. partial machine</summary>
+          <div class="theory-answer">
+            Our machine is completely defined: every one of the 26 × 26 = 676 possible state-input pairs has an explicit transition and output. The machine's input alphabet is strictly <span class="math-var">Σ = {A, …, Z}</span>, so characters outside this set are not inputs to it and are refused by the input check before the machine moves. Because every valid key A to Z deterministically advances the rotor, the transition function <span class="math-var">δ</span> is total, with no undefined moves, no reject states, and no dead states.
+          </div>
+        </details>
+
+        <details>
+          <summary>3. Minimisation and state equivalence</summary>
+          <div class="theory-answer">
+            Using the standard table-filling equivalence partition algorithm, two states <span class="math-var">p</span> and <span class="math-var">q</span> are equivalent (<span class="math-var">p ≡ q</span>) if and only if for all input strings <span class="math-var">w ∈ Σ*</span>, <span class="math-var">λ̂(p, w) = λ̂(q, w)</span>. Since every state has a distinct 1-length output vector across the 26 input letters, no two states are 1-equivalent. Consequently, all 26 states are pairwise distinguishable, proving that the machine is already minimal and cannot be reduced.
+          </div>
+        </details>
+
+        <details>
+          <summary>4. Mealy vs. Moore vs. DFA</summary>
+          <div class="theory-answer">
+            In a Mealy machine, outputs are associated with transitions (<span class="math-var">λ: Q × Σ → Γ</span>), allowing immediate response to input keys. In a Moore machine, outputs are tied solely to states (<span class="math-var">λ: Q → Γ</span>); any Mealy machine can be converted to an equivalent Moore machine, but doing so generally inflates the state count (up to <span class="math-var">|Q| × |Γ|</span> states). A DFA produces no stream of outputs at all, providing only a binary accept/reject verdict at the end of input.
+          </div>
+        </details>
+
+        <details>
+          <summary>5. Computational complexity</summary>
+          <div class="theory-answer">
+            Simulation requires O(n) time complexity for an input string of length <span class="math-var">n</span>, because each character requires a single O(1) constant-time transition table lookup. Memory complexity for execution is O(1) auxiliary space, since only the single scalar state variable must be maintained. When storing the full diagnostic trace of all visited states and step records, the trace buffer consumes O(n) space.
+          </div>
+        </details>
+
+        <details>
+          <summary>6. What it cannot do (Theoretical limitations)</summary>
+          <div class="theory-answer">
+            Because finite state automata lack unbounded external memory (like a stack or Turing tape), this machine cannot recognize non-regular languages such as <span class="math-var">a<sup>n</sup>b<sup>n</sup></span> or count unboundedly. Furthermore, it cannot perform cryptanalysis or simulate the Turing Bombe search spaces (2,109,120 combinations for German Army/Air Force Enigma, or 11,811,072 for Navy). Those cryptanalytic searches are finite combinatorial brute-force problems whose difficulty lies in exponential search time rather than computational undecidability.
+          </div>
+        </details>
+      </div>
+    </section>
+
+
+    <!-- ====================================================================
+         SECTION 10: IMPLEMENTATION DETAILS
+         ==================================================================== -->
+    <section id="section-10" aria-labelledby="section-10-title">
+      <h2 id="section-10-title">Section 10: Implementation Details</h2>
+
+      <h3>One source of truth for the machine</h3>
+      <p>All machine states, alphabet definitions, the initial state, and all 676 transition cells are declared exclusively in <code>enigmaData.js</code>. The web application never hard-codes machine constants; every stat tile, trace, and table across this study guide dynamically queries this single source of truth at page load.</p>
+
+      <h3>How the implementation works</h3>
+      <p>The system is constructed with zero frameworks, zero bundlers, and zero external runtime dependencies:</p>
+      <ul style="margin-left: 1.5rem; margin-bottom: 1.25rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem;">
+        <li><strong><code>enigmaData.js</code>:</strong> Contains the single source-of-truth JavaScript object defining states, alphabets, start state, and the complete 26 × 26 transition lookup table.</li>
+        <li><strong><code>validator.js</code>:</strong> Implements automated assertion checks that verify state counts, completeness (676 transitions), cyclic stepping <span class="math-var">q<sub>N</sub> → q<sub>N+1</sub></span>, and output bijectivity.</li>
+        <li><strong><code>enigmaMachine.js</code>:</strong> Contains the pure simulation function <code>runEnigmaMachine</code> that evaluates input strings without side effects or global mutations.</li>
+        <li><strong><code>test.js</code>:</strong> Automated Node.js test suite running 19 exhaustive test cases covering rotor stepping, wrap-around, full cycles, and character validation.</li>
+        <li><strong><code>index.html</code>:</strong> Semantic, accessible HTML5 structure providing the complete study guide interface across all 11 sections (Sections 0 through 10).</li>
+        <li><strong><code>style.css</code>:</strong> Pure vanilla CSS implementing responsive typography, high-contrast academic aesthetics, and print media rules.</li>
+        <li><strong><code>app.js</code>:</strong> Lightweight vanilla browser script that reads machine data, calculates live traces, populates DOM elements, powers the interactive state diagram, transition matrix, state profiles, the step-by-step interactive simulator with text cleaning and auto-play, and the live worked traces verification table, and executes <span class="browser-self-checks-count-val">19</span> automated startup self-checks in the browser console.</li>
+      </ul>
+
+      <h3>How to run the tests</h3>
+      <p>To run the automated verification suite offline, open a terminal in the project directory and execute:</p>
+      <p style="margin: 0.75rem 0;"><code>node test.js</code></p>
+      <p>The terminal executes the 4-rule data validator and all 18 simulation test cases in <code>test.js</code>, concluding with <code>TEST SUMMARY: 19/19 match</code> (19 of 19: 1 validator case and 18 simulation cases), while the browser console executes <span class="browser-self-checks-count-val">19</span> automated runtime self-checks, concluding with <code id="browser-self-checks-summary-val">All System Self-Checks PASSED (19/19)</code>.</p>
+
+      <h3>Simulation Function Return Structure</h3>
+      <p>The pure execution function <code>runEnigmaMachine</code> takes the machine data, an input string, and an optional start state (defaulting to <code>q0</code>). It returns a structured result object containing:</p>
+      <ul style="margin-left: 1.5rem; margin-top: 0.5rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+        <li><strong><code>output</code>:</strong> The resulting ciphertext string formed by concatenating each emitted character.</li>
+        <li><strong><code>visitedStates</code>:</strong> The ordered array of all states visited during execution, beginning with the start state.</li>
+        <li><strong><code>finalState</code>:</strong> The state where the rotor rests after processing the final input character.</li>
+        <li><strong><code>steps</code>:</strong> An array of step objects, each recording the active state, input letter read, output letter generated, and destination state.</li>
+        <li><strong><code>error</code>:</strong> A descriptive error message detailing the offending character and its 1-based position if an invalid token is encountered, or an empty string for valid runs.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <!-- Site Footer with Back to Top, Project Info, Team & Academic Reference -->
+  <footer class="site-footer">
+    <div class="container site-footer-inner">
+      <a href="#top-nav" class="back-to-top-btn" aria-label="Scroll back to top">
+        ↑ Back to Top
+      </a>
+
+      <div class="footer-project-title">A Mealy Machine Model of the Enigma Rotor</div>
+      <div class="footer-course-line">Models of Computation (Research Paper Review)</div>
+      <div class="footer-team-line"><strong>Team Members:</strong> Harsha Narayan J, Lingeshwar Rethinam, Sanjay, Pavan Aadarsh</div>
+
+      <div class="footer-reference-box">
+        <strong>Academic Reference:</strong>
+        <p style="margin: 0.35rem 0 0 0;">
+          Downs, A. S., Sigmon, N. P., &amp; Klima, R. E. <em>Cryptanalysis of the Enigma Machine: The Bombe and Beyond</em>. The Electronic Journal of Mathematics and Technology, 19(2).
+        </p>
+        <p style="margin: 0.45rem 0 0 0;">
+          <a href="https://ejmt.mathandtech.org/Contents/eJMT_v19n2p1.pdf" target="_blank" rel="noopener noreferrer" class="footer-paper-link">
+            📄 Read Research Paper (PDF, opens in new tab)
+          </a>
+        </p>
+      </div>
+
+      <p style="font-size: 0.78rem; color: #94a3b8; margin-top: 1rem;">
+        Built with Plain HTML, CSS &amp; Vanilla JavaScript. Zero External Runtime Dependencies.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Script Includes -->
+  <!-- 1. Data Validation Engine -->
+  <script src="validator.js"></script>
+  <!-- 2. Machine Data Single Source of Truth -->
+  <script src="enigmaData.js"></script>
+  <!-- 3. Core Pure Simulation Function -->
+  <script src="enigmaMachine.js"></script>
+  <!-- 4. Client Application Controller -->
+  <script src="app.js"></script>
+
+</body>
+</html>

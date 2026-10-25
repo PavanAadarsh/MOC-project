@@ -1,0 +1,21 @@
+# Course Materials (kept in repository, excluded from production web deployment)
+moc project.pdf
+moc my project.pdf
+Enigma_Mealy_Machine_Transitions.xlsx
+
+# Local Testing & Development Tooling
+server.js
+start.md
+test.js
+package.json
+package-lock.json
+
+# Test Artifacts, PDFs & Logs
+*.pdf
+*.log
+*.tmp
+*.bak
+
+# Documentation & Meta
+README.md
+.gitignore

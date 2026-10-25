@@ -1,0 +1,18 @@
+{
+  "name": "enigma-rotor-mealy-machine",
+  "version": "1.0.0",
+  "description": "A formal computer science study guide and interactive simulation website modeling a single Enigma rotor as a deterministic Mealy machine transducer.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "enigma",
+    "mealy-machine",
+    "automata",
+    "models-of-computation"
+  ],
+  "author": "",
+  "license": "ISC"
+}
